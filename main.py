@@ -148,6 +148,8 @@ def show_all_products():
 
 def show_all_users():
 
+    show_recommendation_scores(user1)
+
     print("\n===== USER DATABASE =====")
 
     for user in users.values():
@@ -168,6 +170,89 @@ def main():
     show_all_products()
 
     show_all_users()
+    
+    
+def calculate_recommendation_scores(user):
+
+    scores = {}
+
+    purchased_categories = set()
+    cart_categories = set()
+    searched_categories = set()
+
+    # -------------------------
+    # Purchase History Analysis
+    # -------------------------
+
+    for pid in user.purchase_history:
+        purchased_categories.add(
+            products[pid].category
+        )
+
+    # -------------------------
+    # Cart Analysis
+    # -------------------------
+
+    for pid in user.cart_items:
+        cart_categories.add(
+            products[pid].category
+        )
+
+    # -------------------------
+    # Search Analysis
+    # -------------------------
+
+    for item in user.search_history:
+        searched_categories.add(item)
+
+    # -------------------------
+    # Score Every Product
+    # -------------------------
+
+    for pid, product in products.items():
+
+        # Skip already purchased
+
+        if pid in user.purchase_history:
+            continue
+
+        score = 0
+
+        # Purchase category weight
+
+        if product.category in purchased_categories:
+            score += 5
+
+        # Cart category weight
+
+        if product.category in cart_categories:
+            score += 4
+
+        # Search category weight
+
+        if product.category in searched_categories:
+            score += 3
+
+        # Rating weight
+
+        score += product.rating
+
+        scores[pid] = round(score, 2)
+
+    return scores
+
+
+def show_recommendation_scores(user):
+
+    scores = calculate_recommendation_scores(user)
+
+    print("\n===== RECOMMENDATION SCORES =====\n")
+
+    for pid, score in scores.items():
+
+        print(
+            f"{products[pid].name:<25} Score = {score}"
+        )
 
 
 # ==================================
