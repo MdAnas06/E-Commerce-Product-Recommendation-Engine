@@ -4,6 +4,7 @@
 # ==========================================================
 
 
+
 class Product:
     """
     Represents a product in the e-commerce catalog.

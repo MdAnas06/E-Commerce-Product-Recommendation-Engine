@@ -110,6 +110,7 @@ def generate_report(
 
         file.write("\n")
 
+
         file.write(
             "CART ITEMS\n"
         )

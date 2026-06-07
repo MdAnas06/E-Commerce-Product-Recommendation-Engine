@@ -278,6 +278,7 @@ def display_top_k_recommendations(
         rank += 1
 
 
+
 def display_similar_products(
         product_id,
         products):
