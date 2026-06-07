@@ -1,70 +1,25 @@
 # ==========================================================
+# main.py
 # E-Commerce Product Recommendation Engine
-# Step 6: Heap-Based Top-K Recommendation System
 # ==========================================================
 
-import heapq
+from src.models import Product, User
 
+from src.recommender import (
+    display_recommendation_scores,
+    display_ranked_recommendations,
+    display_top_k_recommendations,
+    display_similar_products,
+    get_category_recommendations
+)
 
-# ==========================================================
-# Product Class
-# ==========================================================
-
-class Product:
-    def __init__(self, product_id, name, category, price, rating):
-        self.product_id = product_id
-        self.name = name
-        self.category = category
-        self.price = price
-        self.rating = rating
-
-    def display(self):
-        print(
-            f"ID: {self.product_id} | "
-            f"Name: {self.name} | "
-            f"Category: {self.category} | "
-            f"Price: ₹{self.price} | "
-            f"Rating: {self.rating}"
-        )
+from src.report_generator import (
+    generate_report
+)
 
 
 # ==========================================================
-# User Class
-# ==========================================================
-
-class User:
-    def __init__(self, user_id, name):
-        self.user_id = user_id
-        self.name = name
-
-        self.purchase_history = []
-        self.search_history = []
-        self.cart_items = []
-        self.ratings = {}
-
-    def display_profile(self):
-        print("\n==============================")
-        print("USER PROFILE")
-        print("==============================")
-
-        print(f"User ID : {self.user_id}")
-        print(f"Name    : {self.name}")
-
-        print("\nPurchase History:")
-        print(self.purchase_history)
-
-        print("\nSearch History:")
-        print(self.search_history)
-
-        print("\nCart Items:")
-        print(self.cart_items)
-
-        print("\nRatings:")
-        print(self.ratings)
-
-
-# ==========================================================
-# Product Database (HashMap)
+# Product Database
 # ==========================================================
 
 products = {}
@@ -82,12 +37,10 @@ products[110] = Product(110, "Jeans", "Fashion", 1999, 4.2)
 
 
 # ==========================================================
-# User Database (HashMap)
+# User Database
 # ==========================================================
 
 users = {}
-
-# User 1
 
 user1 = User(1001, "Anas")
 
@@ -108,7 +61,6 @@ user1.ratings = {
 
 users[user1.user_id] = user1
 
-# User 2
 
 user2 = User(1002, "Rahul")
 
@@ -133,218 +85,160 @@ users[user2.user_id] = user2
 # Display Functions
 # ==========================================================
 
-def show_all_products():
+def show_products():
+
     print("\n===== PRODUCT CATALOG =====\n")
 
     for product in products.values():
         product.display()
 
 
-def show_all_users():
+def show_users():
+
     print("\n===== USER DATABASE =====")
 
     for user in users.values():
         user.display_profile()
 
 
-# ==========================================================
-# Recommendation Scoring Engine
-# ==========================================================
+def show_category_recommendations():
 
-def calculate_recommendation_scores(user):
-
-    scores = {}
-
-    purchased_categories = set()
-    cart_categories = set()
-    searched_categories = set()
-
-    # Purchase history categories
-
-    for pid in user.purchase_history:
-        purchased_categories.add(
-            products[pid].category
-        )
-
-    # Cart categories
-
-    for pid in user.cart_items:
-        cart_categories.add(
-            products[pid].category
-        )
-
-    # Search categories
-
-    for item in user.search_history:
-        searched_categories.add(item)
-
-    # Calculate score for every product
-
-    for pid, product in products.items():
-
-        # Exclude already purchased products
-
-        if pid in user.purchase_history:
-            continue
-
-        score = 0
-
-        # Purchase match
-
-        if product.category in purchased_categories:
-            score += 5
-
-        # Cart match
-
-        if product.category in cart_categories:
-            score += 4
-
-        # Search match
-
-        if product.category in searched_categories:
-            score += 3
-
-        # Product rating
-
-        score += product.rating
-
-        scores[pid] = round(score, 2)
-
-    return scores
-
-
-# ==========================================================
-# Display Scores
-# ==========================================================
-
-def show_recommendation_scores(user):
-
-    scores = calculate_recommendation_scores(user)
-
-    print("\n===== RECOMMENDATION SCORES =====\n")
-
-    for pid, score in scores.items():
-
-        print(
-            f"{products[pid].name:<25} Score = {score}"
-        )
-
-
-# ==========================================================
-# Sorting-Based Ranking
-# ==========================================================
-
-def rank_recommendations(user):
-
-    scores = calculate_recommendation_scores(user)
-
-    ranked_products = sorted(
-        scores.items(),
-        key=lambda item: item[1],
-        reverse=True
+    category = input(
+        "\nEnter Category "
+        "(Electronics/Fashion/Accessories): "
     )
 
-    return ranked_products
+    recommendations = get_category_recommendations(
+        category,
+        products
+    )
 
+    print(
+        f"\n===== TOP PRODUCTS IN {category.upper()} =====\n"
+    )
 
-def show_ranked_recommendations(user):
+    if not recommendations:
 
-    ranked = rank_recommendations(user)
-
-    print("\n===== RANKED RECOMMENDATIONS =====\n")
+        print("No products found.")
+        return
 
     rank = 1
 
-    for pid, score in ranked:
+    for product in recommendations:
 
         print(
             f"{rank}. "
-            f"{products[pid].name:<25}"
-            f" Score: {score}"
+            f"{product.name:<25}"
+            f" Rating: {product.rating}"
         )
 
         rank += 1
 
 
 # ==========================================================
-# Heap-Based Top-K Recommendation Engine
+# CLI Menu
 # ==========================================================
 
-def get_top_k_recommendations(user, k=5):
+def menu():
 
-    scores = calculate_recommendation_scores(user)
+    active_user = user1
 
-    heap = []
+    while True:
 
-    for pid, score in scores.items():
+        print("\n" + "=" * 55)
+        print(" E-Commerce Product Recommendation Engine")
+        print("=" * 55)
 
-        heapq.heappush(
-            heap,
-            (-score, pid)
-        )
+        print("1. Show Product Catalog")
+        print("2. Show Recommendation Scores")
+        print("3. Show Ranked Recommendations")
+        print("4. Show Top 5 Recommendations")
+        print("5. Show Similar Products")
+        print("6. Show Category Recommendations")
+        print("7. Generate Recommendation Report")
+        print("8. Show User Profiles")
+        print("9. Exit")
 
-    top_products = []
+        choice = input("\nEnter Choice: ")
 
-    for _ in range(min(k, len(heap))):
+        if choice == "1":
 
-        score, pid = heapq.heappop(heap)
+            show_products()
 
-        top_products.append(
-            (pid, -score)
-        )
+        elif choice == "2":
 
-    return top_products
+            display_recommendation_scores(
+                active_user,
+                products
+            )
 
+        elif choice == "3":
 
-def show_top_k_recommendations(user, k=5):
+            display_ranked_recommendations(
+                active_user,
+                products
+            )
 
-    recommendations = get_top_k_recommendations(user, k)
+        elif choice == "4":
 
-    print(f"\n===== TOP {k} RECOMMENDATIONS (HEAP) =====\n")
+            display_top_k_recommendations(
+                active_user,
+                products,
+                5
+            )
 
-    rank = 1
+        elif choice == "5":
 
-    for pid, score in recommendations:
+            try:
 
-        print(
-            f"{rank}. "
-            f"{products[pid].name:<25}"
-            f" Score: {score}"
-        )
+                product_id = int(
+                    input(
+                        "\nEnter Product ID: "
+                    )
+                )
 
-        rank += 1
+                if product_id not in products:
 
+                    print("Invalid Product ID")
+                    continue
 
-# ==========================================================
-# Main Function
-# ==========================================================
+                display_similar_products(
+                    product_id,
+                    products
+                )
 
-def main():
+            except ValueError:
 
-    print("=" * 60)
-    print(" E-Commerce Product Recommendation Engine")
-    print(" Step 6: Heap-Based Top-K Recommendations")
-    print("=" * 60)
+                print("Please enter a valid number.")
 
-    # Product Data
+        elif choice == "6":
 
-    show_all_products()
+            show_category_recommendations()
 
-    # Recommendation Scores
+        elif choice == "7":
 
-    show_recommendation_scores(user1)
+            generate_report(
+                active_user,
+                products
+            )
 
-    # Sorted Ranking
+        elif choice == "8":
 
-    show_ranked_recommendations(user1)
+            show_users()
 
-    # Heap-Based Top K
+        elif choice == "9":
 
-    show_top_k_recommendations(user1, 5)
+            print(
+                "\nThank you for using the system."
+            )
 
-    # User Data
+            break
 
-    show_all_users()
+        else:
+
+            print(
+                "\nInvalid choice. Try again."
+            )
 
 
 # ==========================================================
@@ -352,7 +246,7 @@ def main():
 # ==========================================================
 
 if __name__ == "__main__":
-    main()
+    menu()
     
     
     
