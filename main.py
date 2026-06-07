@@ -1,7 +1,14 @@
-# ==================================
-# E-Commerce Recommendation Engine
-# Step 3: User Interaction System
-# ==================================
+# ==========================================================
+# E-Commerce Product Recommendation Engine
+# Step 6: Heap-Based Top-K Recommendation System
+# ==========================================================
+
+import heapq
+
+
+# ==========================================================
+# Product Class
+# ==========================================================
 
 class Product:
     def __init__(self, product_id, name, category, price, rating):
@@ -21,24 +28,21 @@ class Product:
         )
 
 
+# ==========================================================
+# User Class
+# ==========================================================
+
 class User:
     def __init__(self, user_id, name):
-
         self.user_id = user_id
         self.name = name
-
-        # User interactions
 
         self.purchase_history = []
         self.search_history = []
         self.cart_items = []
-
-        # Product ID -> Rating
-
         self.ratings = {}
 
     def display_profile(self):
-
         print("\n==============================")
         print("USER PROFILE")
         print("==============================")
@@ -59,9 +63,9 @@ class User:
         print(self.ratings)
 
 
-# ==================================
+# ==========================================================
 # Product Database (HashMap)
-# ==================================
+# ==========================================================
 
 products = {}
 
@@ -76,9 +80,10 @@ products[108] = Product(108, "Bluetooth Speaker", "Electronics", 2499, 4.5)
 products[109] = Product(109, "Power Bank", "Accessories", 1299, 4.6)
 products[110] = Product(110, "Jeans", "Fashion", 1999, 4.2)
 
-# ==================================
+
+# ==========================================================
 # User Database (HashMap)
-# ==================================
+# ==========================================================
 
 users = {}
 
@@ -86,10 +91,7 @@ users = {}
 
 user1 = User(1001, "Anas")
 
-user1.purchase_history = [
-    101,
-    103
-]
+user1.purchase_history = [101, 103]
 
 user1.search_history = [
     "Electronics",
@@ -97,9 +99,7 @@ user1.search_history = [
     "Laptop"
 ]
 
-user1.cart_items = [
-    109
-]
+user1.cart_items = [109]
 
 user1.ratings = {
     101: 5,
@@ -112,19 +112,14 @@ users[user1.user_id] = user1
 
 user2 = User(1002, "Rahul")
 
-user2.purchase_history = [
-    104,
-    105
-]
+user2.purchase_history = [104, 105]
 
 user2.search_history = [
     "Fashion",
     "Shoes"
 ]
 
-user2.cart_items = [
-    110
-]
+user2.cart_items = [110]
 
 user2.ratings = {
     104: 4,
@@ -134,12 +129,11 @@ user2.ratings = {
 users[user2.user_id] = user2
 
 
-# ==================================
+# ==========================================================
 # Display Functions
-# ==================================
+# ==========================================================
 
 def show_all_products():
-
     print("\n===== PRODUCT CATALOG =====\n")
 
     for product in products.values():
@@ -147,31 +141,16 @@ def show_all_products():
 
 
 def show_all_users():
-
-    show_recommendation_scores(user1)
-
     print("\n===== USER DATABASE =====")
 
     for user in users.values():
         user.display_profile()
 
 
-# ==================================
-# Main
-# ==================================
+# ==========================================================
+# Recommendation Scoring Engine
+# ==========================================================
 
-def main():
-
-    print("=" * 55)
-    print(" E-Commerce Recommendation Engine")
-    print(" Step 3: User Interaction System")
-    print("=" * 55)
-
-    show_all_products()
-
-    show_all_users()
-    
-    
 def calculate_recommendation_scores(user):
 
     scores = {}
@@ -180,60 +159,52 @@ def calculate_recommendation_scores(user):
     cart_categories = set()
     searched_categories = set()
 
-    # -------------------------
-    # Purchase History Analysis
-    # -------------------------
+    # Purchase history categories
 
     for pid in user.purchase_history:
         purchased_categories.add(
             products[pid].category
         )
 
-    # -------------------------
-    # Cart Analysis
-    # -------------------------
+    # Cart categories
 
     for pid in user.cart_items:
         cart_categories.add(
             products[pid].category
         )
 
-    # -------------------------
-    # Search Analysis
-    # -------------------------
+    # Search categories
 
     for item in user.search_history:
         searched_categories.add(item)
 
-    # -------------------------
-    # Score Every Product
-    # -------------------------
+    # Calculate score for every product
 
     for pid, product in products.items():
 
-        # Skip already purchased
+        # Exclude already purchased products
 
         if pid in user.purchase_history:
             continue
 
         score = 0
 
-        # Purchase category weight
+        # Purchase match
 
         if product.category in purchased_categories:
             score += 5
 
-        # Cart category weight
+        # Cart match
 
         if product.category in cart_categories:
             score += 4
 
-        # Search category weight
+        # Search match
 
         if product.category in searched_categories:
             score += 3
 
-        # Rating weight
+        # Product rating
 
         score += product.rating
 
@@ -241,6 +212,10 @@ def calculate_recommendation_scores(user):
 
     return scores
 
+
+# ==========================================================
+# Display Scores
+# ==========================================================
 
 def show_recommendation_scores(user):
 
@@ -255,11 +230,129 @@ def show_recommendation_scores(user):
         )
 
 
-# ==================================
+# ==========================================================
+# Sorting-Based Ranking
+# ==========================================================
+
+def rank_recommendations(user):
+
+    scores = calculate_recommendation_scores(user)
+
+    ranked_products = sorted(
+        scores.items(),
+        key=lambda item: item[1],
+        reverse=True
+    )
+
+    return ranked_products
+
+
+def show_ranked_recommendations(user):
+
+    ranked = rank_recommendations(user)
+
+    print("\n===== RANKED RECOMMENDATIONS =====\n")
+
+    rank = 1
+
+    for pid, score in ranked:
+
+        print(
+            f"{rank}. "
+            f"{products[pid].name:<25}"
+            f" Score: {score}"
+        )
+
+        rank += 1
+
+
+# ==========================================================
+# Heap-Based Top-K Recommendation Engine
+# ==========================================================
+
+def get_top_k_recommendations(user, k=5):
+
+    scores = calculate_recommendation_scores(user)
+
+    heap = []
+
+    for pid, score in scores.items():
+
+        heapq.heappush(
+            heap,
+            (-score, pid)
+        )
+
+    top_products = []
+
+    for _ in range(min(k, len(heap))):
+
+        score, pid = heapq.heappop(heap)
+
+        top_products.append(
+            (pid, -score)
+        )
+
+    return top_products
+
+
+def show_top_k_recommendations(user, k=5):
+
+    recommendations = get_top_k_recommendations(user, k)
+
+    print(f"\n===== TOP {k} RECOMMENDATIONS (HEAP) =====\n")
+
+    rank = 1
+
+    for pid, score in recommendations:
+
+        print(
+            f"{rank}. "
+            f"{products[pid].name:<25}"
+            f" Score: {score}"
+        )
+
+        rank += 1
+
+
+# ==========================================================
+# Main Function
+# ==========================================================
+
+def main():
+
+    print("=" * 60)
+    print(" E-Commerce Product Recommendation Engine")
+    print(" Step 6: Heap-Based Top-K Recommendations")
+    print("=" * 60)
+
+    # Product Data
+
+    show_all_products()
+
+    # Recommendation Scores
+
+    show_recommendation_scores(user1)
+
+    # Sorted Ranking
+
+    show_ranked_recommendations(user1)
+
+    # Heap-Based Top K
+
+    show_top_k_recommendations(user1, 5)
+
+    # User Data
+
+    show_all_users()
+
+
+# ==========================================================
 # Entry Point
-# ==================================
+# ==========================================================
 
 if __name__ == "__main__":
     main()
+    
     
     
