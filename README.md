@@ -198,7 +198,9 @@ Top Recommendations
 Clone the repository:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/E-Commerce-Product-Recommendation-Engine.git
+git clone  https://github.com/MdAnas06/E-Commerce-Product-Recommendation-Engine
+
+
 ```
 
 Move into the project folder:
